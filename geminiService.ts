@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { FormStructure } from "./types";
 
@@ -15,10 +14,11 @@ const SYSTEM_INSTRUCTION = `
 `;
 
 export const generateFormStructure = async (proposalText: string): Promise<FormStructure> => {
+  // Ensure we use the most up-to-date API key injected by the build environment
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3-pro-preview',
     contents: proposalText,
     config: {
       systemInstruction: SYSTEM_INSTRUCTION,
@@ -66,14 +66,15 @@ export const generateFormStructure = async (proposalText: string): Promise<FormS
     }
   });
 
-  if (!response.text) {
-    throw new Error("No response generated from Gemini");
+  const text = response.text;
+  if (!text) {
+    throw new Error("Geminiから応答がありませんでした。");
   }
 
   try {
-    return JSON.parse(response.text) as FormStructure;
+    return JSON.parse(text) as FormStructure;
   } catch (error) {
     console.error("Failed to parse Gemini response:", error);
-    throw new Error("Invalid response format from AI service");
+    throw new Error("AIからの応答を解析できませんでした。内容を少し変えて再試行してください。");
   }
 };
