@@ -14,8 +14,13 @@ const SYSTEM_INSTRUCTION = `
 `;
 
 export const generateFormStructure = async (proposalText: string): Promise<FormStructure> => {
-  // Ensure we use the most up-to-date API key injected by the build environment
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Use 'as any' to avoid tsc error during Vercel build if types are strictly checked
+  const apiKey = (process.env as any).API_KEY;
+  if (!apiKey) {
+    throw new Error("APIキーが設定されていません。Vercelの環境変数を確認してください。");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
@@ -34,7 +39,7 @@ export const generateFormStructure = async (proposalText: string): Promise<FormS
               type: Type.OBJECT,
               properties: {
                 title: { type: Type.STRING },
-                helpText: { type: Type.STRING, nullable: true },
+                helpText: { type: Type.STRING },
                 type: { 
                   type: Type.STRING, 
                   enum: ['TEXT', 'PARAGRAPH', 'RADIO', 'CHECKBOX', 'DROPDOWN', 'SCALE', 'DATE', 'TIME'] 
@@ -42,12 +47,10 @@ export const generateFormStructure = async (proposalText: string): Promise<FormS
                 isRequired: { type: Type.BOOLEAN },
                 options: { 
                   type: Type.ARRAY, 
-                  items: { type: Type.STRING },
-                  nullable: true 
+                  items: { type: Type.STRING }
                 },
                 scaleDetails: {
                   type: Type.OBJECT,
-                  nullable: true,
                   properties: {
                     min: { type: Type.NUMBER },
                     max: { type: Type.NUMBER },
